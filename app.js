@@ -5,6 +5,8 @@ const instance = require("./routes/v1/instance");
 const user = require("./routes/v1/user");
 const auth = require("./routes/v1/auth");
 const admin = require("./routes/v1/admin");
+const product = require("./routes/v1/product");
+
 const { authenticateToken } = require("./middleware/authenticate");
 const { dbConnection } = require("./services/database");
 const PORT = process.env.PORT;
@@ -14,9 +16,10 @@ app.use(express.json());
 app.use(cors());
 dbConnection();
 app.use("/api/v1/instance", instance);
-app.use("/api/v1/users", authenticateToken, user);
+app.use("/api/v1/user", authenticateToken, user);
 app.use("/api/v1/auth", auth);
 app.use("/api/v1/admin", admin);
+app.use("/api/v1/product", authenticateToken, product);
 
 try {
   app.listen(PORT, () => {
