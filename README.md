@@ -1,1 +1,1 @@
-# demo-repo
+# Node Inventory Dashboard App
