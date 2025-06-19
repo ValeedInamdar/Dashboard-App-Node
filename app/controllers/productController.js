@@ -1,4 +1,4 @@
-const Product = require("../models/product");
+const Product = require("../models/productModel");
 
 exports.createProduct = async (req, res) => {
   try {
@@ -20,6 +20,7 @@ exports.createProduct = async (req, res) => {
       price,
       quantity,
       createdBy,
+      imageUrl: `/uploads/${req.file.filename}`,
     });
     await newProduct.save();
     return res.status(200).json({
@@ -115,7 +116,7 @@ exports.deleteProduct = async function (req, res) {
     }
     return res.status(200).json({
       success: true,
-      msg: "product deleted successfully"
+      msg: "product deleted successfully",
     });
   } catch (error) {
     console.error(error);
