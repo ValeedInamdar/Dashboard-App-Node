@@ -4,7 +4,6 @@ exports.deleteUser = async function (req, res) {
   try {
     const id = req.params.id;
     const user = await User.findByIdAndDelete(id);
-    console.log(user);
 
     if (!user) {
       return res.status(400).json({
@@ -30,7 +29,6 @@ exports.updateUser = async function (req, res) {
     const id = req.params.id;
     const body = req.body;
     const user = await User.findByIdAndUpdate(id, body, { new: true });
-    console.log(user);
 
     if (!user) {
       return res.status(400).json({
