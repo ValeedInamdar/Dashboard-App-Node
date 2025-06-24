@@ -1,10 +1,12 @@
 const path = require("path");
 const fs = require("fs");
+const cloudinary = require("../config/cloudinary");
 const Product = require("../models/productModel");
 
 exports.createProduct = async (req, res) => {
   try {
     const { name, brandName, category, price, quantity, createdBy } = req.body;
+    const filePath = req.file.path;
 
     const product = await Product.findOne({ name: name });
     if (product) {
@@ -15,6 +17,20 @@ exports.createProduct = async (req, res) => {
         });
       }
     }
+    // cloudinary upload
+    let imageUrl, publicId;
+    await cloudinary.uploader
+      .upload(filePath, { folder: "products" })
+      .then((result) => {
+        fs.unlinkSync(filePath); // cleanup local file
+        imageUrl = result.secure_url;
+        publicId = result.public_id;
+      })
+      .catch((err) => {
+        console.error(err);
+        return res.status(500).json({ success: false, msg: "upload failed" });
+      });
+
     const newProduct = new Product({
       name,
       brandName,
@@ -22,8 +38,12 @@ exports.createProduct = async (req, res) => {
       price,
       quantity,
       createdBy,
-      imageUrl: `/uploads/${req.file.filename}`,
+      image: {
+        url: imageUrl,
+        public_id: publicId,
+      },
     });
+
     await newProduct.save();
     return res.status(200).json({
       success: true,
@@ -84,6 +104,27 @@ exports.updateProduct = async function (req, res) {
   try {
     const id = req.params.id;
     const { name, brandName, category, price, quantity, createdBy } = req.body;
+
+    const product = await Product.findById(id);
+    let imageUrl = product.image.url,
+      publicId = product.image.public_id;
+    if (req.file) {
+      const filePath = req.file.path;
+      await cloudinary.uploader.destroy(publicId);
+      // cloudinary upload
+      await cloudinary.uploader
+        .upload(filePath, { folder: "products" })
+        .then((result) => {
+          fs.unlinkSync(filePath); // cleanup local file
+          imageUrl = result.secure_url;
+          publicId = result.public_id;
+        })
+        .catch((err) => {
+          console.error(err);
+          return res.status(500).json({ success: false, msg: "upload failed" });
+        });
+    }
+
     const updateData = {
       name,
       brandName,
@@ -91,17 +132,11 @@ exports.updateProduct = async function (req, res) {
       price,
       quantity,
       createdBy,
+      image: {
+        url: imageUrl,
+        public_id: publicId,
+      },
     };
-    if (req.file) {
-      updateData.imageUrl = `/uploads/${req.file.filename}`; // or rename/move + save URL
-      const product = await Product.findById(id);
-      if (product.imageUrl) {
-        const imagePath = path.join(__dirname, "..", product.imageUrl); // adjust if you're storing full URL
-        fs.unlink(imagePath, (err) => {
-          if (err) console.error("Image delete failed:", err);
-        });
-      }
-    }
     const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
       new: true,
     });
@@ -136,11 +171,13 @@ exports.deleteProduct = async function (req, res) {
       });
 
     // 2. Delete image file if exists
-    if (product.imageUrl) {
-      const imagePath = path.join(__dirname, "..", product.imageUrl); // adjust if you're storing full URL
-      fs.unlink(imagePath, (err) => {
-        if (err) console.error("Image delete failed:", err);
-      });
+    const publicId = product.image.public_id;
+    try {
+      await cloudinary.uploader.destroy(publicId); // or add { resource_type: 'image' } if needed
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ msg: "image deletion failed", success: false });
     }
 
     // 3. Delete product from DB

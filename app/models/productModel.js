@@ -27,7 +27,10 @@ const productSchema = new mongoose.Schema(
       required: [true, "Quantity is required"],
       min: [0, "Quantity can not be -ve"],
     },
-    imageUrl: { type: String, required: true },
+    image: {
+      url: { type: String, required: true }, // Cloudinary image URL
+      public_id: { type: String, required: true }, // Needed for deletion
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
