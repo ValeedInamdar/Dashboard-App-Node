@@ -20,7 +20,7 @@ app.use("/api/v1/instance", instance);
 app.use("/api/v1/user", authenticateToken, user);
 app.use("/api/v1/auth", auth);
 app.use("/api/v1/admin", admin);
-app.use("/api/v1/product", authenticateToken, product);
+app.use("/api/v1/products", authenticateToken, product);
 
 try {
   app.listen(PORT, () => {
